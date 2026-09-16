@@ -60,6 +60,7 @@ use tokio_util::sync::CancellationToken;
 use tracing::debug;
 use tracing::error;
 use tracing::info;
+use tracing::warn;
 
 use crate::into_retry_error;
 use crate::notify_retry;
@@ -794,6 +795,26 @@ impl TaskOrchestrator {
         let state = pod.state()?;
 
         debug!("task pod `{tes_id}` is in state `{state}`");
+
+        // Diagnostic-only: if the pod was classified as an I/O or system
+        // error but its current status snapshot *also* shows a failed
+        // executor, log a warning noting the discrepancy. This does not
+        // change classification (see `handle_io_error`'s note for why),
+        // but records enough detail to investigate future recurrences of a
+        // task being reported as an I/O/system error when an executor
+        // genuinely failed first.
+        if matches!(
+            state,
+            TaskPodState::InputsError | TaskPodState::OutputsError | TaskPodState::SystemError
+        ) {
+            let note = failed_executor_note(pod);
+            if !note.is_empty() {
+                warn!(
+                    "task pod `{tes_id}` was classified as `{state}` but its status also shows a \
+                     failed executor ({note}); the executor failure may be the true root cause"
+                );
+            }
+        }
 
         match state {
             TaskPodState::Unknown => self.handle_unknown_pod(tes_id, pod).await?,

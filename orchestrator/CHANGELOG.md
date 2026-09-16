@@ -21,7 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   upload a task's outputs now notes any concurrently-failed executor
   container, to avoid misleadingly attributing the failure solely to the
   output upload step when an executor genuinely failed first
-  ([#XX](https://github.com/stjude-rust-labs/planetary/pull/XX)).
+  ([#51](https://github.com/stjude-rust-labs/planetary/pull/51)).
+* The orchestrator now logs a warning when a task pod is classified as an
+  I/O or system error but its status snapshot also shows a failed executor
+  container, to aid diagnosing future recurrences of this class of
+  misleading classification
+  ([#51](https://github.com/stjude-rust-labs/planetary/pull/51)).
 
 #### Fixed
 
